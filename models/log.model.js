@@ -6,7 +6,7 @@ const logSchema = new schema({
     updatedBy: {type: [schema.Types.ObjectId], ref: 'User'},
     updatedAt: {type: Date},
     details:{type:String, trim: true,},
-    event: {type: schema.Types.ObjectId, ref: 'Event'}
+    bill: {type: schema.Types.ObjectId, ref: 'Bill'}
 })
 
 const Log = mongoose.model('Log', logSchema);

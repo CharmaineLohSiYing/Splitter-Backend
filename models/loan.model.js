@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const schema = mongoose.Schema;
 
 const loanSchema = new schema({
-    event: {type: schema.Types.ObjectId, ref: 'Event'},
+    bill: {type: schema.Types.ObjectId, ref: 'Bill'},
     payer: {type: schema.Types.ObjectId, ref: 'User'},
     payee: {type: schema.Types.ObjectId, ref: 'User'},
     amount: {type: Number, required: true},

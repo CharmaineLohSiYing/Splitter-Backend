@@ -23,17 +23,17 @@ connection.once('open', () => {
 
 const userRouter = require('./routes/user');
 const authRouter = require('./routes/auth');
-const eventRouter = require('./routes/event');
+const billRouter = require('./routes/bill');
 const loanRouter = require('./routes/loan');
-const userEventRouter = require('./routes/userevent');
+const userBillRouter = require('./routes/userbill');
 const transactionRouter = require('./routes/transaction');
 const dataRouter = require('./routes/datainit');
 
 app.use('/user', userRouter.router);
 app.use('/auth', authRouter);
-app.use('/event', eventRouter);
+app.use('/bill', billRouter);
 app.use('/loan', loanRouter.router);
-app.use('/userevent', userEventRouter);
+app.use('/userbill', userBillRouter);
 app.use('/data', dataRouter);
 app.use('/transaction', transactionRouter);
 

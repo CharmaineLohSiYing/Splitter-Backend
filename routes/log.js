@@ -2,16 +2,16 @@ const router = require("express").Router();
 let User = require("../models/user.model");
 let Log = require("../models/log.model");
 let Loan = require("../models/loan.model");
-let Event = require("../models/event.model");
+let Bill = require("../models/bill.model");
 const { create } = require("../models/user.model");
 
-const createLog = (updatedAt, updatedBy, details, event) => {
+const createLog = (updatedAt, updatedBy, details, bill) => {
   return new Promise((resolve, reject) => {
     let newLog = new Log({
       updatedAt,
       updatedBy,
       details,
-      event,
+      bill,
     });
     newLog
       .save()

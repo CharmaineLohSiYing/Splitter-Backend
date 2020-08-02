@@ -14,7 +14,7 @@ router.route("/groupByFriends/:userId").get((req, res) => {
       if (!loanDoc) {
         return res.status(404).json("LOANS NOT FOUND");
       }
-
+      let netDebt = 0;
       const transactions = await Transaction.find({$or: [{ to: userId }, { from: userId }] })
 
       // group loans by the other party's mobile number
@@ -47,8 +47,10 @@ router.route("/groupByFriends/:userId").get((req, res) => {
         } 
 
         if (friendIsPayer){
+          netDebt = netDebt - loan.amount;
           debts[mobileNumberDirectory[friendUserId]].debt = debts[mobileNumberDirectory[friendUserId]].debt - loan.amount
         } else {
+          netDebt = netDebt + loan.amount;
           debts[mobileNumberDirectory[friendUserId]].debt = debts[mobileNumberDirectory[friendUserId]].debt + loan.amount
         }
       }
@@ -76,13 +78,15 @@ router.route("/groupByFriends/:userId").get((req, res) => {
         } 
 
         if (friendIsPayer){
+          netDebt = netDebt + transaction.amount;
           debts[mobileNumberDirectory[friendUserId]].debt = debts[mobileNumberDirectory[friendUserId]].debt + transaction.amount
         } else {
+          netDebt = netDebt - transaction.amount;
           debts[mobileNumberDirectory[friendUserId]].debt = debts[mobileNumberDirectory[friendUserId]].debt - transaction.amount
         }
       }
 
-      return res.status(200).json(debts);
+      return res.status(200).json({loans: debts, netDebt});
     })
     .catch((err) => {
       {

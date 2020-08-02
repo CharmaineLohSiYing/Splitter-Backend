@@ -7,7 +7,6 @@ let User = require("../models/user.model");
 router.route("/login").post((req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-
   User.findOne({ email: email })
     .then((userDoc) => {
       if (!userDoc) {
@@ -31,8 +30,10 @@ router.route("/login").post((req, res) => {
           return res.status(200).json({
             accessToken,
             userId: userDoc._id,
-            name: userDoc.firstName,
+            firstName: userDoc.firstName,
+            lastName: userDoc.lastName,
             mobileNumber: userDoc.mobileNumber,
+            email: userDoc.email
           });
         })
         .catch((err) => {
@@ -210,6 +211,7 @@ router.route("/signup").post((req, res) => {
         newUser = newUser
           .save()
           .then((userCreated) => {
+            console.log('id: ', userCreated._id)
             res.json({ userId: userCreated._id });
             return new Promise((resolve, reject) => {
               resolve(userCreated);
@@ -236,22 +238,29 @@ router.route("/signup").post((req, res) => {
     });
 });
 
-const verifyOtp = async (otp, userId) => {
-  const user = await User.findOne({ _id: userId });
-  if (!user) {
-    throw new Error("User cannot be found");
-  }
+const verifyOtp = (otp, userId) => {
 
-  if (user.otp) {
-    if (user.otpExpiration < new Date()) {
-      throw new Error("OTP has expired");
+  return new Promise (async (resolve, reject) => {
+    console.log('input:', userId)
+    const user = await User.findOne({ _id: userId });
+    if (!user) {
+      reject('User cannot be found')
     }
-    if (user.otp !== otp) {
-      throw new Error("Invalid OTP");
+  
+    if (user.otp) {
+      if (user.otpExpiration < new Date()) {
+        console.log('expired')
+        reject('OTP has expired')
+      }
+      if (user.otp !== otp) {
+        console.log('invalid otp')
+        reject('Invalid OTP')
+      }
+      
+      resolve(user);
     }
-
-    return user;
-  }
+  })
+  
 };
 
 const generateOTPLogic = (userId, type, data) => {
@@ -275,8 +284,8 @@ const generateOTPLogic = (userId, type, data) => {
         user.otp = otp;
         user
           .save()
-          .then(({ otp, otpExpiration }) => {
-            console.log(otp, otpExpiration);
+          .then((savedUser) => {
+            console.log(savedUser.otp);
             resolve();
           })
           .catch((err) => {
@@ -291,6 +300,7 @@ const generateOTPLogic = (userId, type, data) => {
 
 
 router.route("/requestOTP").post(async (req, res) => {
+  console.log('request otp api')
   const userId = req.body.userId;
   const mobileNumber = req.body.mobileNumber;
 
@@ -322,10 +332,13 @@ router.route("/verifyotp").post(async (req, res) => {
       user
         .save()
         .then((savedUser) => {
-          res.status(200).json({
-            name: savedUser.firstName + " " + savedUser.lastName,
-            mobileNumber: savedUser.mobileNumber,
+          return res.status(200).json({
             accessToken,
+            userId: savedUser._id,
+            firstName: savedUser.firstName,
+            lastName: savedUser.lastName,
+            mobileNumber: savedUser.mobileNumber,
+            email: savedUser.email
           });
         })
         .catch((err) => {
