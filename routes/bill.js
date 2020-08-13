@@ -100,14 +100,16 @@ const addUserBillToUser = (user, userBillId) => {
 router.route("/user/:userId").get(async (req, res) => {
   try {
     const userId = req.params.userId;
-    const userBills = await UserBill.find({ user: userId }).populate({
+    const userBills = await UserBill.find({ user: userId })
+    .populate({
       path: "bill",
       model: Bill,
       populate: {
         path: 'sharedOrders',
         model: 'SharedOrder'
       } 
-    }).populate({
+    })
+    .populate({
       path: "sharedOrders",
       model: SharedOrder,
     });

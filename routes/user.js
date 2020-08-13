@@ -111,16 +111,15 @@ const createUnregisteredUser = (mobileNumber) => {
     let newUser = new User({
       mobileNumberTemp: mobileNumber,
       isRegistered: false,
-      email: mobileNumber,
     });
 
     newUser = newUser
       .save()
       .then((userCreated) => {
+        console.log('USER CREATED!')
         resolve(userCreated);
       })
       .catch((err) => {
-        console.log("failed to create new user", err);
         reject(err);
       });
   });
