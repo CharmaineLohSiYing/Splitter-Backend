@@ -3,51 +3,56 @@ const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const moment = require("moment");
 let User = require("../models/user.model");
+const { access } = require("fs");
 
-router.route("/login").post((req, res) => {
-  const email = req.body.email;
-  const password = req.body.password;
-  User.findOne({ email: email })
-    .then((userDoc) => {
-      if (!userDoc) {
-        return res.status(404).json("EMAIL_NOT_FOUND");
-      }
+// // done
+// router.route("/login").post((req, res) => {
+//   const email = req.body.email;
+//   const password = req.body.password;
+//   User.findOne({ email: email })
+//     .then((userDoc) => {
+//       if (!userDoc) {
+//         return res.status(404).json("EMAIL_NOT_FOUND");
+//       }
 
-      bcrypt
-        .compare(password, userDoc.password)
-        .then((doMatch) => {
-          if (!doMatch) {
-            return res.status(401).json("INVALID_PASSWORD");
-          }
+//       bcrypt
+//         .compare(password, userDoc.password)
+//         .then(async(doMatch) => {
+//           if (!doMatch) {
+//             return res.status(401).json("INVALID_PASSWORD");
+//           }
 
-          if (!userDoc.mobileNumber) {
-            return res
-              .status(200)
-              .json({ accessToken: "NOT_VERIFIED", userId: userDoc._id });
-          }
+//           if (!userDoc.mobileNumber) {
+//             return res
+//               .status(200)
+//               .json({ accessToken: "NOT_VERIFIED", userId: userDoc._id });
+//           }
 
-          const accessToken = generateAccessToken();
-          return res.status(200).json({
-            accessToken,
-            userId: userDoc._id,
-            firstName: userDoc.firstName,
-            lastName: userDoc.lastName,
-            mobileNumber: userDoc.mobileNumber,
-            email: userDoc.email
-          });
-        })
-        .catch((err) => {
-          {
-            return res.status(400).json("Error: " + err);
-          }
-        });
-    })
-    .catch((err) => {
-      {
-        return res.status(400).json("Error: " + err);
-      }
-    });
-});
+//           const {accessToken, accessTokenExpiration} = await generateAndSetAccessToken(userDoc._id)
+//           console.log('returned from function', accessToken, accessTokenExpiration)
+
+//           return res.status(200).json({
+//             accessToken,
+//             userId: userDoc._id,
+//             firstName: userDoc.firstName,
+//             lastName: userDoc.lastName,
+//             mobileNumber: userDoc.mobileNumber,
+//             email: userDoc.email,
+//             accessTokenExpiration
+//           });
+//         })
+//         .catch((err) => {
+//           {
+//             return res.status(400).json("Error: " + err);
+//           }
+//         });
+//     })
+//     .catch((err) => {
+//       {
+//         return res.status(400).json("Error: " + err);
+//       }
+//     });
+// });
 
 router.route("/requestpasswordreset").post((req, res) => {
   const email = req.body.email;
@@ -177,66 +182,68 @@ router.route("/changePassword").put(async (req, res) => {
   });
 });
 
-router.route("/signup").post((req, res) => {
-  const firstName = req.body.firstName;
-  const lastName = req.body.lastName;
-  const email = req.body.email;
-  const mobileNumber = req.body.mobileNumber;
-  const password = req.body.password;
+// // done 
+// router.route("/signup").post((req, res) => {
+//   const firstName = req.body.firstName;
+//   const lastName = req.body.lastName;
+//   const email = req.body.email;
+//   const mobileNumber = req.body.mobileNumber;
+//   const password = req.body.password;
 
-  User.findOne({ $or: [{ email: email }, { mobileNumber: mobileNumber }] })
-    .then((userDoc) => {
-      if (userDoc) {
-        if (userDoc.email === email) {
-          return res.status(400).json("User with this email already exists");
-        } else {
-          return res
-            .status(400)
-            .json("User with this mobile number already exists");
-        }
-      }
+  
+//   User.findOne({ $or: [{ email: email }, { mobileNumber: mobileNumber }] })
+//     .then((userDoc) => {
+//       if (userDoc) {
+//         if (userDoc.email === email) {
+//           return res.status(400).json("User with this email already exists");
+//         } else {
+//           return res
+//             .status(400)
+//             .json("User with this mobile number already exists");
+//         }
+//       }
 
-      // return bcrypt.hash(password, 12).then(hashedPassword => {
-      bcrypt.hash(password, 12).then((hashedPassword) => {
-        var newUser = new User({
-          firstName,
-          lastName,
-          password: hashedPassword,
-          email,
-          mobileNumberTemp: mobileNumber,
-        });
+//       // return bcrypt.hash(password, 12).then(hashedPassword => {
+//       bcrypt.hash(password, 12).then((hashedPassword) => {
+//         var newUser = new User({
+//           firstName,
+//           lastName,
+//           password: hashedPassword,
+//           email,
+//           mobileNumberTemp: mobileNumber,
+//         });
 
-        const otp = generateOTP();
-        // add async logic to send otp
-        newUser = newUser
-          .save()
-          .then((userCreated) => {
-            console.log('id: ', userCreated._id)
-            res.json({ userId: userCreated._id });
-            return new Promise((resolve, reject) => {
-              resolve(userCreated);
-            });
-          })
-          .then((newUser) => {
-            var otpExpiration = moment(new Date()).add(3, "m").toDate();
-            newUser.otpExpiration = otpExpiration;
-            newUser.otp = otp;
-            newUser
-              .save()
-              .then(({ otp, otpExpiration }) => console.log(otp, otpExpiration))
-              .catch((err) => {
-                return res.status(400).json("Error: " + err);
-              });
-          })
-          .catch((err) => {
-            return res.status(400).json("Error: " + err);
-          });
-      });
-    })
-    .catch((err) => {
-      return res.status(400).json("Error: " + err);
-    });
-});
+//         const otp = generateOTP();
+//         // add async logic to send otp
+//         newUser = newUser
+//           .save()
+//           .then((userCreated) => {
+//             console.log('id: ', userCreated._id)
+//             res.json({ userId: userCreated._id });
+//             return new Promise((resolve, reject) => {
+//               resolve(userCreated);
+//             });
+//           })
+//           .then((newUser) => {
+//             var otpExpiration = moment(new Date()).add(3, "m").toDate();
+//             newUser.otpExpiration = otpExpiration;
+//             newUser.otp = otp;
+//             newUser
+//               .save()
+//               .then(({ otp, otpExpiration }) => console.log(otp, otpExpiration))
+//               .catch((err) => {
+//                 return res.status(400).json("Error: " + err);
+//               });
+//           })
+//           .catch((err) => {
+//             return res.status(400).json("Error: " + err);
+//           });
+//       });
+//     })
+//     .catch((err) => {
+//       return res.status(400).json("Error: " + err);
+//     });
+// });
 
 const verifyOtp = (otp, userId) => {
 
@@ -317,66 +324,70 @@ router.route("/requestOTP").post(async (req, res) => {
   }
 });
 
-router.route("/verifyotp").post(async (req, res) => {
-  const otp = req.body.otp;
-  const userId = req.body.userId;
-  try {
-    const user = await verifyOtp(otp, userId);
+// router.route("/verifyotp").post(async (req, res) => {
+//   const otp = req.body.otp;
+//   const userId = req.body.userId;
+//   try {
+//     const user = await verifyOtp(otp, userId);
  
-      user.mobileNumber = user.mobileNumberTemp;
-      user.mobileNumberTemp = null;
-      user.otp = null;
-      user.otpExpiration = null;
-
-      const accessToken = generateAccessToken();
-      user
-        .save()
-        .then((savedUser) => {
-          return res.status(200).json({
-            accessToken,
-            userId: savedUser._id,
-            firstName: savedUser.firstName,
-            lastName: savedUser.lastName,
-            mobileNumber: savedUser.mobileNumber,
-            email: savedUser.email
-          });
-        })
-        .catch((err) => {
-          return res.status(400).json("Error: " + err);
-        });
+//       user.mobileNumber = user.mobileNumberTemp;
+//       user.mobileNumberTemp = null;
+//       user.otp = null;
+//       user.otpExpiration = null;
+//       const {accessToken, accessTokenExpiration} = await generateAndSetAccessToken(userId)
+//       console.log('returned from function', accessToken, accessTokenExpiration)
+          
+//       user
+//         .save()
+//         .then((savedUser) => {
+//           return res.status(200).json({
+//             accessToken,
+//             userId: savedUser._id,
+//             firstName: savedUser.firstName,
+//             lastName: savedUser.lastName,
+//             mobileNumber: savedUser.mobileNumber,
+//             email: savedUser.email,
+//             accessTokenExpiration
+//           });
+//         })
+//         .catch((err) => {
+//           return res.status(400).json("Error: " + err);
+//         });
     
-  } catch (err) {
-    return res.status(400).json("Error: " + err);
-  }
-});
+//   } catch (err) {
+//     return res.status(400).json("Error: " + err);
+//   }
+// });
 
 function generateAccessToken() {
   return crypto.randomBytes(64).toString("base64");
 }
 
-const generateAndSetAccessToken = async (userId) => {
-  const accessToken = crypto.randomBytes(64).toString("base64");
-  try {
-    const user = await User.findOne({ _id: userId });
-    if (!user) {
-      return res.status(404).json("No user found");
+const generateAndSetAccessToken = (userId) => {
+  return new Promise(async(resolve, reject) => {
+    const accessToken = generateAccessToken();
+    try {
+      const user = await User.findOne({ _id: userId });
+      if (!user) {
+        return res.status(404).json("No user found");
+      }
+
+      user.accessToken = accessToken;
+      const accessTokenExpiration = moment(new Date()).add(1, "y").toDate();
+      user.accessTokenExpiration = accessTokenExpiration;
+
+      user
+        .save()
+        .then(() => {
+          resolve({accessToken, accessTokenExpiration});
+        })
+        .catch((err) => {
+          reject(err)
+        });
+    } catch (err) {
+      reject(err)
     }
-
-    user.accessToken = accessToken;
-    var accessTokenExpiration = moment(new Date()).add(1, "y").toDate();
-    user.accessTokenExpiration = accessTokenExpiration;
-
-    user
-      .save()
-      .then(() => {
-        res.status(200).json("OTP Verification Success");
-      })
-      .catch((err) => {
-        return res.status(400).json("Error: " + err);
-      });
-  } catch (err) {
-    return res.status(400).json("Error: " + err);
-  }
+  })
 };
 
 function generateOTP() {

@@ -3,6 +3,8 @@ const cors = require('cors');
 require('dotenv').config();
 const mongoose = require('mongoose');
 var bodyParser = require("body-parser");
+const api = require("./routes/api");
+const admin = require("./routes/admin");
 
 
 const app = express();
@@ -21,21 +23,23 @@ connection.once('open', () => {
 
 
 
-const userRouter = require('./routes/user');
-const authRouter = require('./routes/auth');
-const billRouter = require('./routes/bill');
-const loanRouter = require('./routes/loan');
-const userBillRouter = require('./routes/userbill');
-const transactionRouter = require('./routes/transaction');
-const dataRouter = require('./routes/datainit');
+// const userRouter = require('./routes/user');
+// const authRouter = require('./routes/auth');
+// const billRouter = require('./routes/bill');
+// const loanRouter = require('./routes/loan');
+// const userBillRouter = require('./routes/userbill');
+// const transactionRouter = require('./routes/transaction');
+// const dataRouter = require('./routes/datainit');
 
-app.use('/user', userRouter.router);
-app.use('/auth', authRouter);
-app.use('/bill', billRouter);
-app.use('/loan', loanRouter.router);
-app.use('/userbill', userBillRouter);
-app.use('/data', dataRouter);
-app.use('/transaction', transactionRouter);
+app.use('/api', api)
+app.use('/admin', admin)
+// app.use('/user', userRouter.router);
+// app.use('/auth', authRouter);
+// app.use('/bill', billRouter);
+// app.use('/loan', loanRouter.router);
+// app.use('/userbill', userBillRouter);
+// app.use('/data', dataRouter);
+// app.use('/transaction', transactionRouter);
 
 
 app.listen(port, () => {

@@ -299,6 +299,7 @@ router.route("/retrieveForEdit/:billId").get(async (req, res) => {
   return res.status(200).json({ bill, userBills });
 });
 
+// done
 const handleAttendees_edit = async (attendees, billId) => {
   console.log('handle attendees start')
     // key should be user's mongoose id
@@ -503,7 +504,7 @@ router.route("/add").post(async (req, res) => {
     
 
     let newBill = new Bill({
-      billName,
+      billName: billName ? billName : "Bill",
       date: new Date(formattedDate),
       createdAt: new Date(),
       hasGST: addGST,
@@ -514,10 +515,6 @@ router.route("/add").post(async (req, res) => {
       totalBill,
       sharedOrders: [],
     });
-
-    if (!billName){
-      newBill.billName = "Bill"
-    }
 
     let retrievedUsers = [];
 
