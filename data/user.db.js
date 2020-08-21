@@ -34,30 +34,25 @@ const createUser = async (userToCreate) => {
   }
 };
 
-const findUserAndUpdate = async (userId, toUpdate) => {
-  try {
-    return await User.findByIdAndUpdate(userId, toUpdate);
-  } catch (e) {
-    throw new Error("Unable to create user");
-  }
-};
 
-const createUnregisteredUser = async (mobileNumber) => {
-  let newUser = new User({
-    mobileNumberTemp: mobileNumber,
-    isRegistered: false,
-  });
-
-  newUser = newUser
-    .save()
-    .then((userCreated) => {
-      console.log('UNREGISTERED USER CREATED!')
-      resolve(userCreated);
-    })
-    .catch((err) => {
-      reject(err);
+const createUnregisteredUser = (mobileNumber) => {
+  return new Promise((resolve, reject) => {
+    let newUser = new User({
+      mobileNumberTemp: mobileNumber,
+      isRegistered: false,
     });
-}
+
+    newUser = newUser
+      .save()
+      .then((userCreated) => {
+        console.log("UNREGISTERED USER CREATED!");
+        resolve(userCreated);
+      })
+      .catch((err) => {
+        reject(err);
+      });
+  });
+};
 
 module.exports = {
   createUnregisteredUser,
@@ -65,5 +60,4 @@ module.exports = {
   findUserById,
   findUserByEmailOrMobileNumber,
   createUser,
-  findUserAndUpdate,
 };

@@ -3,11 +3,10 @@ const {
   findBillById,
   createBill,
 } = require("../data/bill.db");
-const {
-  findUserAndUpdate,
-  createUnregisteredUser,
-} = require("../data/user.db");
+const { createUnregisteredUser } = require("../data/user.db");
 const { createSharedOrder } = require("../data/sharedorder.db");
+
+const { createLog } = require("../data/log.db");
 
 const moment = require("moment");
 const User = require("../models/user.model");
@@ -110,7 +109,7 @@ const handleSharedOrders_edit = async (
     if (!sharedOrder._id) {
       // new shared order
       const newSharedOrder = await createSharedOrder(
-        new SharedOrder({ sharers, amount })
+        new SharedOrder({ users: sharers, amount })
       );
       updatedSharedOrdersArr.push(newSharedOrder);
 
@@ -266,9 +265,8 @@ const handleSharedOrders = async (sharedOrders, attendees, newBill) => {
       sharerMongooseIds.push(attendees[sharer].mongooseId);
     }
 
-    let newSharedOrder = await sharedOrderMethods.createSharedOrder(
-      sharerMongooseIds,
-      amount
+    let newSharedOrder = await createSharedOrder(
+      new SharedOrder({ users: sharerMongooseIds, amount })
     );
     newBill.sharedOrders.push(newSharedOrder._id);
 
@@ -376,58 +374,55 @@ const createBillService = async (
   totalBill,
   sharedOrders
 ) => {
-  try {
-    let newBill = new Bill({
-      billName: billName ? billName : "Bill",
-      date: new Date(formattedDate),
-      createdAt: new Date(),
-      hasGST: addGST,
-      hasServiceCharge: addServiceCharge,
-      discountType,
-      discountAmount,
-      netBill,
-      totalBill,
-      sharedOrders: [],
-    });
+  let newBill = new Bill({
+    billName: billName ? billName : "Bill",
+    date: new Date(formattedDate),
+    createdAt: new Date(),
+    hasGST: addGST,
+    hasServiceCharge: addServiceCharge,
+    discountType,
+    discountAmount,
+    netBill,
+    totalBill,
+    sharedOrders: [],
+  });
 
-    let retrievedUsers = [];
+  let retrievedUsers = [];
 
-    await handleAttendees(attendees, retrievedUsers, newBill);
-    await handleSharedOrders(sharedOrders, attendees, newBill);
+  await handleAttendees(attendees, retrievedUsers, newBill);
+  await handleSharedOrders(sharedOrders, attendees, newBill);
 
-    let createdBill = await createBill(newBill);
+  let createdBill = await createBill(newBill);
 
-    await logMethods.createLog(
-      new Date(),
-      createdBill.createdBy,
-      "created bill",
-      createdBill._id
-    );
-
-    handleLoans(attendees, createdBill._id, formattedDate);
-
-    await handleUserBills(attendees);
-
-    // retrieve creator's userbill and return success
-    const userBillToReturn = await UserBill.find({
-      user: createdBill.createdBy,
+  await createLog(
+    new Log({
+      updatedAt: new Date(),
+      updatedBy: createdBill.createdBy,
+      details: "created bill",
+      bill: createdBill._id,
     })
-      .populate({
-        path: "bill",
-        model: Bill,
-      })
-      .populate({
-        path: "sharedOrders",
-        model: SharedOrder,
-      });
+  );
 
-    return res.status(200).json({
-      userBill: userBillToReturn,
+  handleLoans(attendees, createdBill._id, formattedDate);
+
+  await handleUserBills(attendees);
+
+  // retrieve creator's userbill and return success
+  const userBillToReturn = await UserBill.find({
+    user: createdBill.createdBy,
+  })
+    .populate({
+      path: "bill",
+      model: Bill,
+    })
+    .populate({
+      path: "sharedOrders",
+      model: SharedOrder,
     });
-  } catch (err) {
-    console.log("error", err);
-    return res.status(400).json({ error: err });
-  }
+
+  return {
+    userBill: userBillToReturn,
+  };
 };
 
 const getBillDetailsService = async (billId) => {

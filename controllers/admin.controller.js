@@ -1,9 +1,3 @@
-const {
-  loginService,
-  signupService,
-  setOTPService,
-  verifyOTPService,
-} = require("../services/auth.service");
 const { DELETE } = require("../constants/constants");
 let User = require("../models/user.model");
 let Loan = require("../models/loan.model");

@@ -1,4 +1,4 @@
-const { loginService, signupService, setOTPService, verifyOTPService } = require("../services/auth.service");
+const { loginService, signupService, setOTPService, verifyOTPService, enterNewPasswordService, resetPasswordService, changePasswordService } = require("../services/auth.service");
 const { POST } = require("../constants/constants");
 
 const login = async (req, res, next) => {
@@ -47,8 +47,72 @@ const verifyOTP = async (req, res, next) => {
   }
 };
 
+const requestPasswordReset = async (req, res, next) => {
+  if (req.method === POST) {
+    try {
+      const {email} = req.body;
+      const token = await generateResetPasswordTokenService(email);
+      res.send(token);
+    } catch (e) {
+      return res.status(500).json(e.message) && next(e);
+    }
+  } else {
+    res.sendStatus(405);
+  }
+};
+
+const enterNewPassword = async (req, res, next) => {
+  if (req.method === POST) {
+    try {
+      const newPassword = req.body.password;
+      const userId = req.body.userId;
+      const passwordToken = req.body.resetPasswordToken;
+      const token = await enterNewPasswordService(newPassword, userId, passwordToken);
+      res.send(token);
+    } catch (e) {
+      return res.status(500).json(e.message) && next(e);
+    }
+  } else {
+    res.sendStatus(405);
+  }
+};
+
+const resetPassword = async (req, res, next) => {
+  if (req.method === POST) {
+    try {
+      const token = req.params.token;
+      
+      const result = await resetPasswordService(token);
+      res.send(result);
+    } catch (e) {
+      return res.status(500).json(e.message) && next(e);
+    }
+  } else {
+    res.sendStatus(405);
+  }
+};
+
+const changePassword = async (req, res, next) => {
+  if (req.method === PUT) {
+    try {
+      let { oldPassword, newPassword, userId } = req.body;
+      const result = await changePasswordService(oldPassword,newPassword, userId);
+      res.send(result);
+    } catch (e) {
+      return res.status(500).json(e.message) && next(e);
+    }
+  } else {
+    res.sendStatus(405);
+  }
+};
+
+
 module.exports = {
   login,
   signup,
-  verifyOTP
+  verifyOTP,
+  enterNewPassword,
+  resetPassword,
+  requestPasswordReset,
+  changePassword
 };

@@ -1,4 +1,4 @@
-const Log = require("../models/Log.model");
+const Log = require("../models/log.model");
 
 const findLogById = async (logId) => {
   try {

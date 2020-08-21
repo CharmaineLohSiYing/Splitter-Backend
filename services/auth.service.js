@@ -3,7 +3,6 @@ const {
   findUserById,
   findUserByEmailOrMobileNumber,
   createUser,
-  findUserAndUpdate,
 } = require("../data/user.db");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
@@ -40,7 +39,7 @@ const generatePasswordHash = (password) => {
 
 const generateAccessToken = () => {
   return crypto.randomBytes(64).toString("base64");
-}
+};
 
 const generateAndSetAccessToken = (userId) => {
   return new Promise(async (resolve, reject) => {
@@ -82,7 +81,11 @@ const setOTPService = async (userId) => {
     const otp = generateOTP();
     console.log(otp);
     var otpExpiration = moment(new Date()).add(3, "m").toDate();
-    await findUserAndUpdate(userId, { otp, otpExpiration });
+
+    const user = await findUserById(userId);
+    user.otp = otp;
+    user.otpExpiration = otpExpiration;
+    await user.save();
   } catch (err) {
     console.log("Unable to set OTP for user", userId);
   }
@@ -109,6 +112,8 @@ const loginService = async (email, password) => {
       accessToken,
       accessTokenExpiration,
     } = await generateAndSetAccessToken(user._id);
+
+    console.log("******", user.mobileNumber);
     return {
       accessToken,
       userId: user._id,
@@ -186,30 +191,122 @@ const verifyOTPService = async (otp, userId) => {
       accessTokenExpiration,
     } = await generateAndSetAccessToken(userId);
 
-    await findUserAndUpdate(userId, {
-      mobileNumber: user.mobileNumberTemp,
-      mobileNumberTemp: null,
-      otp: null,
-      otpExpiration: null,
-    });
+    user.mobileNumber = user.mobileNumberTemp;
+    user.mobileNumberTemp = null;
+    user.otp = null;
+    user.otpExpiration = null;
 
+    const updatedUser = await user.save();
+
+    console.log("updated user", updatedUser.mobileNumber);
     return {
       accessToken,
       accessTokenExpiration,
-      userId: user._id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      mobileNumber: user.mobileNumber,
-      email: user.email,
+      userId: updatedUser._id,
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      mobileNumber: updatedUser.mobileNumber,
+      email: updatedUser.email,
     };
   } catch (err) {
     throw err;
   }
 };
 
+const generateToken = () => {
+  crypto.randomBytes(32, (err, buffer) => {
+    if (err) {
+      throw new Error("Unable to generate token");
+    }
+    return buffer.toString("hex");
+  });
+};
+
+const generateResetPasswordTokenService = async (email) => {
+  const token = generateToken();
+  const user = await findUserByEmail(email);
+  if (!user) {
+    throw new Error("No account with this email found");
+  }
+
+  user.resetPasswordToken = token;
+  user.resetPasswordExpiration = Date.now() + 3600000;
+  await user.save();
+
+  // send email here with the token
+  //   return transporter.sendMail({
+  //       to: email,
+  //       from: 'splitter@admin.com',
+  //       subject:'Reset Password',
+  //       html:`
+  //       <p>You requested a password reset</p>
+  //       <p>Click this <a href="http://localhost:5000/users/resetpassword/${token}">link</a> to set a new password: </p>
+  //       `
+  //   })
+
+  return token;
+};
+
+const resetPasswordService = async (token) => {
+  User.findOne({
+    resetPasswordToken: token,
+    resetPasswordExpiration: { $gt: Date.now() },
+  })
+    .then((user) => {
+      if (!user) {
+        throw new Error("Token has expired")
+      }
+      return { userId: user._id, resetPasswordToken: token };
+    })
+}
+
+const enterNewPasswordService = async (newPassword, userId, passwordToken) => {
+  const user = await User.findOne({
+    _id: userId,
+    resetPasswordToken: passwordToken,
+    resetPasswordExpiration: { $gt: Date.now() },
+  })
+
+  if (!user) {
+    throw new Error("Token has expired")
+  }
+
+  const hashedPassword = await generatePasswordHash(newPassword);
+  user.password = hashedPassword;
+          user.resetPasswordToken = undefined;
+          user.resetPasswordExpiration = undefined;
+          await user.save();
+          return; 
+}
+
+
+const changePasswordService = async (oldPassword, newPassword, userId) => {
+
+  const user = await findUserById(userId);
+  if (!user){
+    throw new Error("User cannot be found")
+  }
+
+  try {
+    checkPassword(oldPassword, user.password);
+  } catch (err){
+    throw new Error("Old password is incorrect")
+  }
+  
+  const hashedPassword = await generatePasswordHash(newPassword)
+  user.password = hashedPassword;
+  await user.save();
+  return;
+}
+
+
 module.exports = {
   loginService,
   signupService,
   setOTPService,
   verifyOTPService,
+  generateResetPasswordTokenService,
+  resetPasswordService,
+  changePasswordService,
+  enterNewPasswordService
 };

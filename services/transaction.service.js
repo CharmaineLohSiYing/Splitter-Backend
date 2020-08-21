@@ -4,7 +4,6 @@ const {
   createBill,
 } = require("../data/bill.db");
 const {
-  findUserAndUpdate,
   createUnregisteredUser,
 } = require("../data/user.db");
 

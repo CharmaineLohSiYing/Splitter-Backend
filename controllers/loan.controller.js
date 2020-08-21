@@ -10,11 +10,10 @@ const { POST, GET } = require("../constants/constants");
 const { getLoansGroupedByFriendsService, getLoansByFriendMobileNumberService, getLoansByFriendUserIdService, createLoanService } = require("../services/loan.service");
 
 const getLoansGroupedByFriends = async (req, res, next) => {
-  if (req.method === PUT) {
+  if (req.method === GET) {
     try {
       const { userId } = req.params;
       const result = await getLoansGroupedByFriendsService(userId);
-
       res.status(200).json(result);
     } catch (e) {
       return res.status(500).json(e.message) && next(e);
@@ -42,7 +41,7 @@ const getLoansByFriendMobileNumber = async (req, res, next) => {
   if (req.method === GET) {
     try {
       const { userId, friendMobileNumber } = req.params;
-      const result = await getLoansByFriendMobileNumberService(userId);
+      const result = await getLoansByFriendMobileNumberService(userId, friendMobileNumber);
 
       res.status(200).json(result);
     } catch (e) {

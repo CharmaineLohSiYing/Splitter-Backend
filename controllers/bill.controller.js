@@ -23,7 +23,7 @@ const createBill = async (req, res, next) => {
         netBill,
       } = billDetails;
 
-      await createBillService(
+      const result = await createBillService(
         billName,
         formattedDate,
         addGST,
@@ -36,8 +36,6 @@ const createBill = async (req, res, next) => {
         sharedOrders
       );
 
-      const { email, password } = req.body;
-      const result = await loginService(email, password);
       res.send(result);
     } catch (e) {
       return res.status(500).json(e.message) && next(e);
@@ -52,7 +50,7 @@ const getBillDetails = async (req, res, next) => {
     try {
       const billId = req.params.billId;
       const details = await getBillDetailsService(billId);
-      res.status(200).json(result);
+      res.status(200).json(details);
     } catch (e) {
       return res.status(500).json(e.message) && next(e);
     }
