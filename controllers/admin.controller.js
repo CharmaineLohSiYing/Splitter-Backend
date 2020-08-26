@@ -1,4 +1,4 @@
-const { DELETE } = require("../constants/constants");
+const { DELETE, GET } = require("../constants/constants");
 let User = require("../models/user.model");
 let Loan = require("../models/loan.model");
 const SharedOrder = require("../models/sharedorder.model");
@@ -21,7 +21,16 @@ const clearDatabase = async (req, res, next) => {
     res.sendStatus(405);
   }
 };
+const getAllUsers = async (req, res, next) => {
+  if (req.method === GET) {
+    const users = await User.find();
+    res.status(200).json(users);
+  } else {
+    res.sendStatus(405);
+  }
+};
 
 module.exports = {
   clearDatabase,
+  getAllUsers,
 };

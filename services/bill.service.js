@@ -164,6 +164,20 @@ const handleSharedOrders_edit = async (
   console.log("handle shared orders end");
 };
 
+
+const handleGSTAndServiceCharge = (amount, hasGST, hasServiceCharge) => {
+  let multiplier = 1;
+  if (hasGST){
+    multiplier += 0.07;
+  }
+
+  if (hasServiceCharge){
+    multiplier += 0.1
+  }
+
+  return amount * multiplier;
+}
+
 const cancelPreviousLoans = async (billId) => {
   console.log("cancel previous loans start");
   let loansToCancel = await Loan.find({ bill: billId, isCancelled: false });
@@ -187,6 +201,9 @@ const handleAttendees_edit = async (attendees, billId) => {
     if (!attendeeUserBill) {
       return res.status(404).json("user bill cannot be found");
     }
+
+    // account for gst / service charge
+    targetedAttendee.amount = handleGSTAndServiceCharge(targetedAttendee.amount, bill.hasGST, bil.hasServiceCharge);
 
     // modify attendees object to add in user id and add debt value
     let debt = targetedAttendee.amount - targetedAttendee.paidAmount;
@@ -225,6 +242,9 @@ const handleAttendees = async (attendees, retrievedUsers, bill) => {
 
     retrievedUsers.push(retrievedUser);
 
+    // account for gst / service charge
+    targetedAttendee.amount = handleGSTAndServiceCharge(targetedAttendee.amount, bill.hasGST, bill.hasServiceCharge);
+
     // create new userbill
     let newUserBill = new UserBill({
       individualOrderAmount: targetedAttendee.amount,
@@ -253,6 +273,8 @@ const handleSharedOrders = async (sharedOrders, attendees, newBill) => {
   console.log("handle shared orders start");
   for (sharedOrder of sharedOrders) {
     let sharerMongooseIds = [];
+
+    sharedOrder.amount = handleGSTAndServiceCharge(sharedOrder.amount, newBill.hasGST, newBill.hasServiceCharge);
 
     let amount = sharedOrder.amount;
     let sharers = sharedOrder.users;

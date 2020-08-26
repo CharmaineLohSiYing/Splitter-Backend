@@ -185,7 +185,8 @@ const verifyOTP = async (otp, userId) => {
 
 const verifyOTPService = async (otp, userId) => {
   try {
-    const user = await verifyOTP(otp, userId);
+
+    let user = await verifyOTP(otp, userId);
     const {
       accessToken,
       accessTokenExpiration,
@@ -209,7 +210,7 @@ const verifyOTPService = async (otp, userId) => {
       email: updatedUser.email,
     };
   } catch (err) {
-    throw err;
+    throw new Error("Unable to verify OTP");
   }
 };
 

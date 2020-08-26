@@ -1,5 +1,5 @@
 const { loginService, signupService, setOTPService, verifyOTPService, enterNewPasswordService, resetPasswordService, changePasswordService } = require("../services/auth.service");
-const { POST } = require("../constants/constants");
+const { POST, PUT } = require("../constants/constants");
 
 const login = async (req, res, next) => {
   if (req.method === POST) {
@@ -17,7 +17,7 @@ const login = async (req, res, next) => {
 
 const signup = async (req, res, next) => {
   if (req.method === POST) {
-    let userId; 
+    let userId = null; 
     try {
       const {firstName, lastName, email, mobileNumber, password} = req.body
       const newUser = await signupService(email, password, firstName, lastName, mobileNumber);
@@ -27,7 +27,10 @@ const signup = async (req, res, next) => {
     } catch (e) {
       return res.status(500).json(e.message) && next(e);
     }
-    setOTPService(userId)
+    if (userId){
+      setOTPService(userId)
+    }
+    
   } else {
     res.sendStatus(405);
   }
@@ -40,6 +43,7 @@ const verifyOTP = async (req, res, next) => {
       const user = await verifyOTPService(otp, userId);
       res.send(user);
     } catch (e) {
+      console.log('CATCH', e.message)
       return res.status(500).json(e.message) && next(e);
     }
   } else {
